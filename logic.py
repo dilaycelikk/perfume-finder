@@ -1,10 +1,20 @@
-def filter_perfumes(perfumes, gender, budget, season, mood):
+def filter_perfumes(perfumes, gender, budget, season, mood, note):
     results = []
     for p in perfumes:
-        if (p['gender'] == gender and
-            p['budget'] == budget and
-            p['season'] == season and
-            p['mood'] == mood):
+        match = True
+        
+        if gender and gender not in p['gender']:
+            match = False
+        if budget and budget not in p['budget']:
+            match = False
+        if season and season not in p['season']:
+            match = False
+        if mood and mood not in p['mood']:
+            match = False
+        if note and note not in p['notes']:
+            match = False
+            
+        if match:
             results.append(p)
     return results
 

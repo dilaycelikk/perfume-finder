@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Find Your Perfect Scent</h2>
+    <p>Answer the questions below to get personalized perfume recommendations.</p>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Gender Preference</label>
+            <select name="gender" required>
+                <option value="">Select...</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="unisex">Unisex</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Budget</label>
+            <select name="budget" required>
+                <option value="">Select...</option>
+                <option value="budget">Budget-Friendly</option>
+                <option value="mid">Mid-Range</option>
+                <option value="luxury">Luxury</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Season</label>
+            <select name="season" required>
+                <option value="">Select...</option>
+                <option value="spring">Spring</option>
+                <option value="summer">Summer</option>
+                <option value="fall">Fall</option>
+                <option value="winter">Winter</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Occasion</label>
+            <select name="mood" required>
+                <option value="">Select...</option>
+                <option value="daily">Daily</option>
+                <option value="work">Work</option>
+                <option value="evening">Evening</option>
+                <option value="special">Special Occasion</option>
+            </select>
+        </div>
+
+        
+
+        <button type="submit" class="btn-primary">Find Perfumes →</button>
+    </form>
+</div>
+{% endblock %}

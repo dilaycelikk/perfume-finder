@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="favorites">
+    <h2>My Favorites</h2>
+
+    {% if favorites %}
+        <div class="perfume-grid">
+            {% for f in favorites %}
+            <div class="perfume-card">
+                <h3>{{ f.name }}</h3>
+                <p class="brand">{{ f.brand }}</p>
+                <p>⏱ Longevity: <strong>{{ f.longevity_hours }} hours</strong> — {{ f.longevity_label }}</p>
+
+                {% if f.budget == 'luxury' %}
+                    {% if f.alternative_suggestion %}
+                    <p class="suggestion">💡 Affordable alternative: <strong>{{ f.alternative_suggestion }}</strong></p>
+                    {% endif %}
+                {% endif %}
+
+                {% if f.budget == 'budget' %}
+                    {% if f.inspired_by %}
+                    <p class="inspired">🌸 Inspired by <strong>{{ f.inspired_by }}</strong></p>
+                    <p class="original">✨ Consider trying the original: <strong>{{ f.inspired_by }}</strong></p>
+                    {% endif %}
+                {% endif %}
+
+                <p class="note">📝 Your note: {{ f.personal_note if f.personal_note else 'No note added.' }}</p>
+
+                <form method="POST" action="{{ url_for('update_favorite', fav_id=f.id) }}">
+                    <input type="text" name="note" placeholder="Update your note..." value="{{ f.personal_note }}">
+                    <button type="submit" class="btn-secondary">Update Note</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('delete_favorite', fav_id=f.id) }}">
+                    <button type="submit" class="btn-delete">Remove from Favorites</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You have no saved perfumes yet.</p>
+        <a href="{{ url_for('quiz') }}" class="btn-primary">Find Perfumes</a>
+    {% endif %}
+</div>
+{% endblock %}

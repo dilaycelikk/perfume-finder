@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="results">
+    <h2>Your Perfume Recommendations</h2>
+
+    {% if perfumes %}
+        <div class="perfume-grid">
+            {% for p in perfumes %}
+            <div class="perfume-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                <h3>{{ p.name }}</h3>
+                <p class="brand" style="color: #666; font-size: 0.9em;">{{ p.brand }}</p>
+                <p>⏱ Longevity: <strong>{{ p.longevity_hours }} hours</strong> — {{ p.longevity_label }}</p>
+
+                <div class="note-badges" style="margin: 15px 0; display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% set note_emojis = {
+                        'citrus': '🍋', 'woody': '🪵', 'spicy': '🌶️', 'fresh': '🍃',
+                        'sweet': '🍬', 'vanilla': '🍦', 'floral': '🌸', 'fruity': '🍓',
+                        'smoky': '💨', 'aquatic': '🌊', 'amber': '🍯', 'rose': '🌹',
+                        'powdery': '☁️', 'leather': '🧥', 'tobacco': '🚬', 'green': '🌿',
+                        'earthy': '🌱', 'musky': '🪨', 'lactonic': '🥛', 'gourmand': '🧁',
+                        'aromatic': '🌿', 'boozy': '🥃'
+                    } %}
+                    
+                    {% for note in p.notes.split(',') %}
+                        {% set clean_note = note.strip().lower() %}
+                        <span class="note-pill" style="background-color: #f8f9fa; color: #333; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            {{ note_emojis.get(clean_note, '✨') }} {{ clean_note | capitalize }}
+                        </span>
+                    {% endfor %}
+                </div>
+
+                {% if p.alternative_suggestion %}
+                    <div class="suggestion-box" style="background-color: #e8f5e9; padding: 10px; margin-top: 10px; border-radius: 5px; border-left: 4px solid #4caf50;">
+                        💡 <strong>Budget-Friendly Alternative:</strong> If you are looking for a more affordable option, <em>{{ p.alternative_suggestion }}</em> is an excellent match.
+                    </div>
+                {% endif %}
+
+                {% if p.inspired_by %}
+                    <div class="inspiration-box" style="background-color: #f3e5f5; padding: 10px; margin-top: 10px; border-radius: 5px; border-left: 4px solid #9c27b0;">
+                        ✨ <strong>Inspiration:</strong> This scent is inspired by the luxury fragrance <em>{{ p.inspired_by }}</em>. A highly recommended option to explore in the future!
+                    </div>
+                {% endif %}
+
+                <hr style="border-top: 1px solid #eee; margin: 15px 0;">
+
+                {% if p.already_saved %}
+                    <button class="btn-saved" disabled style="background-color: #ccc; padding: 8px 15px; border: none; border-radius: 4px; cursor: not-allowed;">✓ Already in Favorites</button>
+                {% else %}
+                    <form method="POST" action="{{ url_for('add_favorite', perfume_id=p.id) }}">
+                        <input type="hidden" name="gender" value="{{ request.args.get('gender') }}">
+                        <input type="hidden" name="budget" value="{{ request.args.get('budget') }}">
+                        <input type="hidden" name="season" value="{{ request.args.get('season') }}">
+                        <input type="hidden" name="mood" value="{{ request.args.get('mood') }}">
+                        <input type="hidden" name="filter_note" value="{{ request.args.get('note') }}"> 
+                        
+                        <input type="text" name="note" placeholder="Add a personal note (optional)" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button type="submit" class="btn-primary" style="background-color: #000; color: #fff; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">+ Add to Favorites</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="text-align: center; padding: 40px; background-color: #f9f9f9; border-radius: 8px;">
+            <p>We couldn't find an exact match for that specific combination, but the world of fragrance is full of surprises!</p>
+            <p>Would you like to adjust your filters to discover more options?</p>
+            <a href="{{ url_for('quiz') }}" class="btn-secondary" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #ddd; color: #333; text-decoration: none; border-radius: 4px;">← Re-take the Quiz</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

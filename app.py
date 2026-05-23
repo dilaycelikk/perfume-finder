@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from db import get_db, init_db
 from auth import register_user, login_user, logout_user, get_current_user
 from logic import filter_perfumes, get_longevity_label, is_already_in_favorites, get_budget_display
-
+from livereload import Server
 app = Flask(__name__)
 # secret key for session management
 app.secret_key = 'perfume_secret_key_2024'
@@ -69,8 +69,10 @@ def quiz():
         budget = request.form['budget']
         season = request.form['season']
         mood = request.form['mood']
+        note = request.form.get('note', '') 
+        
         # send filters to results page
-        return redirect(url_for('results', gender=gender, budget=budget, season=season, mood=mood))
+        return redirect(url_for('results', gender=gender, budget=budget, season=season, mood=mood, note=note))
     return render_template('quiz.html')
 
 # results page - show matching perfumes
@@ -78,11 +80,14 @@ def quiz():
 def results():
     if not get_current_user():
         return redirect(url_for('login'))
-    # get filters from url
+    
+    # get filters from url (Added 'note' parameter here)
     gender = request.args.get('gender')
     budget = request.args.get('budget')
     season = request.args.get('season')
     mood = request.args.get('mood')
+    note = request.args.get('note') 
+    
     db = get_db()
     # get all perfumes from database
     all_perfumes = db.execute('SELECT * FROM perfumes').fetchall()
@@ -92,8 +97,10 @@ def results():
         (get_current_user(),)
     ).fetchall()
     db.close()
-    # filter perfumes based on user preferences
-    filtered = filter_perfumes(all_perfumes, gender, budget, season, mood)
+    
+    # filter perfumes based on user preferences (Updated to include 'note')
+    filtered = filter_perfumes(all_perfumes, gender, budget, season, mood, note)
+    
     results_with_labels = []
     for p in filtered:
         p = dict(p)
@@ -102,6 +109,7 @@ def results():
         # check if already in favorites
         p['already_saved'] = is_already_in_favorites(user_favorites, p['id'])
         results_with_labels.append(p)
+        
     return render_template('results.html', perfumes=results_with_labels, budget=budget)
 
 # favorites page - show user's saved perfumes
@@ -145,10 +153,13 @@ def add_favorite(perfume_id):
         )
         db.commit()
     db.close()
+    
+    # Redirect back with the filters applied
     return redirect(url_for('results', gender=request.form.get('gender'),
                             budget=request.form.get('budget'),
                             season=request.form.get('season'),
-                            mood=request.form.get('mood')))
+                            mood=request.form.get('mood'),
+                            note=request.form.get('filter_note')))
 
 # update personal note on a favorite
 @app.route('/favorites/update/<int:fav_id>', methods=['POST'])
@@ -184,4 +195,7 @@ def delete_favorite(fav_id):
 if __name__ == '__main__':
     # initialize database on first run
     init_db()
-    app.run(debug=True)
+    server = Server(app.wsgi_app)
+    server.watch('templates/*.*')
+    server.watch('static/*.*')
+    server.serve(port=5000)

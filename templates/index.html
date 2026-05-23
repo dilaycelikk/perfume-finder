@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero">
+    <h1>Find Your Perfect Scent</h1>
+    <p>Discover the fragrance that matches your personality, budget and style.</p>
+    <div class="hero-buttons">
+        <a href="{{ url_for('register') }}" class="btn-primary">Get Started</a>
+        <a href="{{ url_for('login') }}" class="btn-secondary">Login</a>
+    </div>
+</div>
+{% endblock %}

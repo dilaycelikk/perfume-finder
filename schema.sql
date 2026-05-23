@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS perfumes (
     budget TEXT NOT NULL,
     season TEXT NOT NULL,
     mood TEXT NOT NULL,
+    notes TEXT NOT NULL,
     longevity_hours INTEGER NOT NULL,
     inspired_by TEXT,
     alternative_suggestion TEXT
