@@ -1,72 +1,154 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="results">
-    <h2>Your Perfume Recommendations</h2>
-
-    {% if perfumes %}
-        <div class="perfume-grid">
-            {% for p in perfumes %}
-            <div class="perfume-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                <h3>{{ p.name }}</h3>
-                <p class="brand" style="color: #666; font-size: 0.9em;">{{ p.brand }}</p>
-                <p>⏱ Longevity: <strong>{{ p.longevity_hours }} hours</strong> — {{ p.longevity_label }}</p>
-
-                <div class="note-badges" style="margin: 15px 0; display: flex; flex-wrap: wrap; gap: 8px;">
-                    {% set note_emojis = {
-                        'citrus': '🍋', 'woody': '🪵', 'spicy': '🌶️', 'fresh': '🍃',
-                        'sweet': '🍬', 'vanilla': '🍦', 'floral': '🌸', 'fruity': '🍓',
-                        'smoky': '💨', 'aquatic': '🌊', 'amber': '🍯', 'rose': '🌹',
-                        'powdery': '☁️', 'leather': '🧥', 'tobacco': '🚬', 'green': '🌿',
-                        'earthy': '🌱', 'musky': '🪨', 'lactonic': '🥛', 'gourmand': '🧁',
-                        'aromatic': '🌿', 'boozy': '🥃'
-                    } %}
-                    
-                    {% for note in p.notes.split(',') %}
-                        {% set clean_note = note.strip().lower() %}
-                        <span class="note-pill" style="background-color: #f8f9fa; color: #333; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            {{ note_emojis.get(clean_note, '✨') }} {{ clean_note | capitalize }}
-                        </span>
-                    {% endfor %}
+<div class="box" style="max-width: 1100px; padding: 50px;">
+    <span class="eyebrow">Curated Selection</span>
+    <h1 class="title">Your <em>Matches</em></h1>
+    
+    <div class="perfume-grid">
+        {% if perfumes %}
+            {% for perfume in perfumes %}
+            <div class="perfume-card">
+                
+                <div class="card-top">
+                    <span class="perfume-badge">{{ perfume.gender|upper }}</span>
                 </div>
 
-                {% if p.alternative_suggestion %}
-                    <div class="suggestion-box" style="background-color: #e8f5e9; padding: 10px; margin-top: 10px; border-radius: 5px; border-left: 4px solid #4caf50;">
-                        💡 <strong>Budget-Friendly Alternative:</strong> If you are looking for a more affordable option, <em>{{ p.alternative_suggestion }}</em> is an excellent match.
+                <div class="card-main">
+                    <span class="perfume-name">{{ perfume.name }}</span>
+                    <span class="perfume-brand">{{ perfume.brand }}</span>
+                    
+                    <div class="perfume-notes">
+                        {% for note in perfume.notes.split(',') %}
+                            <span class="note-tag">{{ note.strip() }}</span>
+                        {% endfor %}
                     </div>
-                {% endif %}
+                </div>
 
-                {% if p.inspired_by %}
-                    <div class="inspiration-box" style="background-color: #f3e5f5; padding: 10px; margin-top: 10px; border-radius: 5px; border-left: 4px solid #9c27b0;">
-                        ✨ <strong>Inspiration:</strong> This scent is inspired by the luxury fragrance <em>{{ p.inspired_by }}</em>. A highly recommended option to explore in the future!
-                    </div>
-                {% endif %}
+                <div class="divider"></div>
 
-                <hr style="border-top: 1px solid #eee; margin: 15px 0;">
+                <div class="card-inspired">
+                    {% if perfume.budget|lower == 'luxury' %}
+                        <span class="inspired-label">Affordable Alternative</span>
+                        {% if perfume.alternative_suggestion and perfume.alternative_suggestion|string != 'None' and perfume.alternative_suggestion|string|trim != '' %}
+                            <span class="inspired-name">{{ perfume.alternative_suggestion }}</span>
+                        {% else %}
+                            <span class="inspired-name" style="color: #444; font-size: 11px; font-style: italic;">Exclusive Formulation</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="inspired-label">Inspired By</span>
+                        {% if perfume.inspired_by and perfume.inspired_by|string != 'None' and perfume.inspired_by|string|trim != '' %}
+                            <span class="inspired-name">{{ perfume.inspired_by }}</span>
+                        {% else %}
+                            <span class="inspired-name" style="color: #444; font-size: 11px; font-style: italic;">Original Formulation</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
 
-                {% if p.already_saved %}
-                    <button class="btn-saved" disabled style="background-color: #ccc; padding: 8px 15px; border: none; border-radius: 4px; cursor: not-allowed;">✓ Already in Favorites</button>
-                {% else %}
-                    <form method="POST" action="{{ url_for('add_favorite', perfume_id=p.id) }}">
-                        <input type="hidden" name="gender" value="{{ request.args.get('gender') }}">
-                        <input type="hidden" name="budget" value="{{ request.args.get('budget') }}">
-                        <input type="hidden" name="season" value="{{ request.args.get('season') }}">
-                        <input type="hidden" name="mood" value="{{ request.args.get('mood') }}">
-                        <input type="hidden" name="filter_note" value="{{ request.args.get('note') }}"> 
-                        
-                        <input type="text" name="note" placeholder="Add a personal note (optional)" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                        <button type="submit" class="btn-primary" style="background-color: #000; color: #fff; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">+ Add to Favorites</button>
-                    </form>
-                {% endif %}
+                <div class="card-longevity" style="margin-bottom: 20px;">
+                    <span style="font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Kalıcılık:</span>
+                    <span style="color: #C8A96B; font-size: 12px; font-weight: 400;">{{ perfume.longevity_hours }}h ({{ perfume.longevity_label }})</span>
+                </div>
+
+                <div class="card-action">
+                    {% if favorite_ids and perfume.id in favorite_ids %}
+                        <button class="action-link btn-added"
+                                data-delete-url="{{ url_for('delete_favorite', fav_id=perfume.id) }}"
+                                data-add-url="{{ url_for('add_favorite', perfume_id=perfume.id) }}"
+                                onmouseenter="this.textContent='REMOVE ✗'"
+                                onmouseleave="this.textContent='ADDED TO PORTFOLIO ✓'"
+                                onclick="toggleFavorite(this, 'remove')">
+                            ADDED TO PORTFOLIO ✓
+                        </button>
+                    {% else %}
+                        <button class="action-link"
+                                data-delete-url="{{ url_for('delete_favorite', fav_id=perfume.id) }}"
+                                data-add-url="{{ url_for('add_favorite', perfume_id=perfume.id) }}"
+                                onclick="toggleFavorite(this, 'add')">
+                            Add To Collection †
+                        </button>
+                    {% endif %}
+                </div>
+                
             </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state" style="text-align: center; padding: 40px; background-color: #f9f9f9; border-radius: 8px;">
-            <p>We couldn't find an exact match for that specific combination, but the world of fragrance is full of surprises!</p>
-            <p>Would you like to adjust your filters to discover more options?</p>
-            <a href="{{ url_for('quiz') }}" class="btn-secondary" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #ddd; color: #333; text-decoration: none; border-radius: 4px;">← Re-take the Quiz</a>
-        </div>
-    {% endif %}
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px 0;">
+                <p style="font-weight: 300; color: #777;">No exact match found. Try adjusting your preferences.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="text-align: center; margin-top: 60px;">
+        <a href="{{ url_for('quiz') }}" class="btn-gold btn-outline">Take Quiz Again</a>
+    </div>
 </div>
+
+<style>
+    .perfume-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
+    .perfume-card { background: #0A0A0A; border: 1px solid #1a1a1a; padding: 30px; display: flex; flex-direction: column; transition: all 0.3s ease; position: relative; }
+    .perfume-card:hover { border-color: rgba(200, 169, 107, 0.4); transform: translateY(-5px); }
+
+    .card-top { margin-bottom: 20px; }
+    .perfume-badge { font-size: 10px; letter-spacing: 2px; color: #777; border: 1px solid #222; padding: 4px 10px; font-weight: 400; }
+
+    .card-main { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+    .perfume-name { font-family: 'Cormorant Garamond', serif; color: #F5F5F2; font-size: 26px; font-weight: 400; line-height: 1.2; }
+    .perfume-brand { color: #A1A1A1; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; font-weight: 300; }
+    
+    .perfume-notes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .note-tag { background: #1a1a1a; color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; padding: 3px 8px; border: 1px solid #222; }
+
+    .divider { height: 1px; background: linear-gradient(90deg, #222, transparent); margin: 25px 0; }
+
+    .card-inspired { display: flex; flex-direction: column; gap: 4px; margin-bottom: 30px; flex-grow: 1; }
+    .inspired-label { color: #C8A96B; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; margin-bottom: 5px; }
+    .inspired-name { color: #ccc; font-size: 14px; font-weight: 400; letter-spacing: 1px; }
+
+    .card-action { margin-top: auto; border-top: 1px solid #1a1a1a; padding-top: 20px; }
+    .action-link { background: none; border: none; color: #C8A96B; font-family: 'Poppins', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; padding: 0; width: 100%; text-align: left; transition: color 0.3s; }
+    .action-link:hover { color: #E5C07B; }
+
+    .btn-added { color: #F5F5F2; letter-spacing: 3px; }
+    .btn-added:hover { color: #cc3333 !important; }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const scrollPos = sessionStorage.getItem("scrollPos");
+        if (scrollPos) {
+            window.scrollTo(0, scrollPos);
+            sessionStorage.removeItem("scrollPos");
+        }
+    });
+
+    function buttonLoading(formElement) {
+        sessionStorage.setItem("scrollPos", window.scrollY);
+        const btn = formElement.querySelector('.action-link');
+        btn.innerHTML = 'ADDING...';
+        btn.style.color = '#F5F5F2'; 
+    }
+
+    function toggleFavorite(btn, action) {
+        sessionStorage.setItem("scrollPos", window.scrollY);
+        const url = action === 'remove' ? btn.dataset.deleteUrl : btn.dataset.addUrl;
+
+        fetch(url, { method: 'POST' })
+            .then(() => {
+                if (action === 'remove') {
+                    btn.textContent = 'Add To Collection †';
+                    btn.classList.remove('btn-added');
+                    btn.onmouseenter = null;
+                    btn.onmouseleave = null;
+                    btn.onclick = function() { toggleFavorite(this, 'add'); };
+                } else {
+                    btn.textContent = 'ADDED TO PORTFOLIO ✓';
+                    btn.classList.add('btn-added');
+                    btn.onmouseenter = function() { this.textContent = 'REMOVE ✗'; };
+                    btn.onmouseleave = function() { this.textContent = 'ADDED TO PORTFOLIO ✓'; };
+                    btn.onclick = function() { toggleFavorite(this, 'remove'); };
+                }
+            });
+    }
+</script>
 {% endblock %}
