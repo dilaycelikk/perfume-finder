@@ -1,201 +1,126 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from db import get_db, init_db
 from auth import register_user, login_user, logout_user, get_current_user
-from logic import filter_perfumes, get_longevity_label, is_already_in_favorites, get_budget_display
-from livereload import Server
+from logic import filter_perfumes, get_longevity_label
+
 app = Flask(__name__)
-# secret key for session management
 app.secret_key = 'perfume_secret_key_2024'
 
-# home page
 @app.route('/')
-def index():
-    return render_template('index.html')
+def index(): return render_template('index.html')
 
-# register page
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        success, message = register_user(username, email, password)
-        if success:
-            return redirect(url_for('login'))
-        # show error if registration fails
-        return render_template('register.html', error=message)
+        success, msg = register_user(request.form['username'], request.form['email'], request.form['password'])
+        if success: return redirect(url_for('login'))
+        return render_template('register.html', error=msg)
     return render_template('register.html')
 
-# login page
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        if login_user(email, password):
-            return redirect(url_for('dashboard'))
-        # wrong email or password
-        return render_template('login.html', error='Invalid email or password.')
+        if login_user(request.form['email'], request.form['password']): return redirect(url_for('dashboard'))
+        return render_template('login.html', error='Invalid credentials.')
     return render_template('login.html')
 
-# logout
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# dashboard - only for logged in users
 @app.route('/dashboard')
 def dashboard():
-    # if not logged in, go to login page
-    if not get_current_user():
-        return redirect(url_for('login'))
+    user_id = get_current_user()
+    if not user_id: return redirect(url_for('login'))
+    
     db = get_db()
-    # count how many favorites the user has
-    count = db.execute(
-        'SELECT COUNT(*) FROM favorites WHERE user_id = ?',
-        (get_current_user(),)
-    ).fetchone()[0]
+    
+    # 1. Toplam Kaydedilen Parfüm Sayısı
+    count = db.execute('SELECT COUNT(*) FROM favorites WHERE user_id = ?', (user_id,)).fetchone()[0]
+    
+    # 2. Günün Önerisi (Rastgele 1 Parfüm)
+    daily_pick = db.execute('SELECT name, brand FROM perfumes ORDER BY RANDOM() LIMIT 1').fetchone()
+    
+    # 3. Signature Vibe (Kullanıcının en çok favorilediği nota)
+    top_note_row = db.execute('''
+        SELECT p.notes 
+        FROM perfumes p 
+        JOIN favorites f ON p.id = f.perfume_id 
+        WHERE f.user_id = ? 
+        GROUP BY p.notes 
+        ORDER BY COUNT(p.id) DESC 
+        LIMIT 1
+    ''', (user_id,)).fetchone()
+    
+    favorite_note = "Start saving to see insights"
+    if top_note_row and top_note_row['notes']:
+        
+        first_note = top_note_row['notes'].split(',')[0].strip()
+        favorite_note = first_note.title()
+        
     db.close()
-    return render_template('dashboard.html', username=session['username'], count=count)
+    
+    return render_template('dashboard.html', 
+                           username=session.get('username'), 
+                           count=count,
+                           daily_pick=daily_pick,
+                           favorite_note=favorite_note)
 
-# quiz page - user selects preferences
 @app.route('/quiz', methods=['GET', 'POST'])
 def quiz():
-    if not get_current_user():
-        return redirect(url_for('login'))
+    if not get_current_user(): return redirect(url_for('login'))
     if request.method == 'POST':
-        gender = request.form['gender']
-        budget = request.form['budget']
-        season = request.form['season']
-        mood = request.form['mood']
-        note = request.form.get('note', '') 
-        
-        # send filters to results page
-        return redirect(url_for('results', gender=gender, budget=budget, season=season, mood=mood, note=note))
+        return redirect(url_for('results', gender=request.form.get('gender'), budget=request.form.get('budget'), 
+                                season=request.form.get('season'), mood=request.form.get('mood')))
     return render_template('quiz.html')
 
-# results page - show matching perfumes
 @app.route('/results')
 def results():
-    if not get_current_user():
-        return redirect(url_for('login'))
-    
-    # get filters from url (Added 'note' parameter here)
-    gender = request.args.get('gender')
-    budget = request.args.get('budget')
-    season = request.args.get('season')
-    mood = request.args.get('mood')
-    note = request.args.get('note') 
-    
+    if not get_current_user(): return redirect(url_for('login'))
     db = get_db()
-    # get all perfumes from database
-    all_perfumes = db.execute('SELECT * FROM perfumes').fetchall()
-    # get user's favorites to check which ones are already saved
-    user_favorites = db.execute(
-        'SELECT * FROM favorites WHERE user_id = ?',
-        (get_current_user(),)
-    ).fetchall()
+    all_p = db.execute('SELECT * FROM perfumes').fetchall()
+    favs = db.execute('SELECT perfume_id FROM favorites WHERE user_id = ?', (get_current_user(),)).fetchall()
     db.close()
-    
-    # filter perfumes based on user preferences (Updated to include 'note')
-    filtered = filter_perfumes(all_perfumes, gender, budget, season, mood, note)
-    
-    results_with_labels = []
-    for p in filtered:
-        p = dict(p)
-        # add longevity label
-        p['longevity_label'] = get_longevity_label(p['longevity_hours'])
-        # check if already in favorites
-        p['already_saved'] = is_already_in_favorites(user_favorites, p['id'])
-        results_with_labels.append(p)
-        
-    return render_template('results.html', perfumes=results_with_labels, budget=budget)
+    fav_ids = [f['perfume_id'] for f in favs]
+    res = [dict(p) for p in filter_perfumes(all_p, request.args.get('gender'), request.args.get('budget'), request.args.get('season'), request.args.get('mood'), '')]
+    for p in res: p['longevity_label'] = get_longevity_label(p['longevity_hours'])
+    return render_template('results.html', perfumes=res, favorite_ids=fav_ids)
 
-# favorites page - show user's saved perfumes
 @app.route('/favorites')
 def favorites():
-    if not get_current_user():
-        return redirect(url_for('login'))
+    if not get_current_user(): return redirect(url_for('login'))
     db = get_db()
-    # join favorites with perfumes to get all details
-    favs = db.execute(
-        '''SELECT f.id, f.personal_note, f.added_at, p.name, p.brand, p.budget,
-           p.longevity_hours, p.inspired_by, p.alternative_suggestion
-           FROM favorites f JOIN perfumes p ON f.perfume_id = p.id
-           WHERE f.user_id = ?''',
-        (get_current_user(),)
-    ).fetchall()
+    favs = db.execute('''SELECT f.id as fav_id, p.*, f.personal_note 
+                         FROM favorites f JOIN perfumes p ON f.perfume_id = p.id 
+                         WHERE f.user_id = ?''', (get_current_user(),)).fetchall()
     db.close()
-    favorites_list = []
-    for f in favs:
-        f = dict(f)
-        f['longevity_label'] = get_longevity_label(f['longevity_hours'])
-        favorites_list.append(f)
-    return render_template('favorites.html', favorites=favorites_list)
+    return render_template('favorites.html', favorites=[dict(f) for f in favs])
 
-# add perfume to favorites
 @app.route('/favorites/add/<int:perfume_id>', methods=['POST'])
 def add_favorite(perfume_id):
-    if not get_current_user():
-        return redirect(url_for('login'))
-    note = request.form.get('note', '')
     db = get_db()
-    # check if already in favorites
-    existing = db.execute(
-        'SELECT id FROM favorites WHERE user_id = ? AND perfume_id = ?',
-        (get_current_user(), perfume_id)
-    ).fetchone()
-    if not existing:
-        db.execute(
-            'INSERT INTO favorites (user_id, perfume_id, personal_note) VALUES (?, ?, ?)',
-            (get_current_user(), perfume_id, note)
-        )
-        db.commit()
-    db.close()
-    
-    # Redirect back with the filters applied
-    return redirect(url_for('results', gender=request.form.get('gender'),
-                            budget=request.form.get('budget'),
-                            season=request.form.get('season'),
-                            mood=request.form.get('mood'),
-                            note=request.form.get('filter_note')))
-
-# update personal note on a favorite
-@app.route('/favorites/update/<int:fav_id>', methods=['POST'])
-def update_favorite(fav_id):
-    if not get_current_user():
-        return redirect(url_for('login'))
-    note = request.form.get('note', '')
-    db = get_db()
-    # only update if the favorite belongs to the current user
-    db.execute(
-        'UPDATE favorites SET personal_note = ? WHERE id = ? AND user_id = ?',
-        (note, fav_id, get_current_user())
-    )
+    db.execute('INSERT INTO favorites (user_id, perfume_id) VALUES (?, ?)', (get_current_user(), perfume_id))
     db.commit()
     db.close()
-    return redirect(url_for('favorites'))
+    return redirect(request.referrer)
 
-# delete a favorite
 @app.route('/favorites/delete/<int:fav_id>', methods=['POST'])
 def delete_favorite(fav_id):
-    if not get_current_user():
-        return redirect(url_for('login'))
     db = get_db()
-    # only delete if the favorite belongs to the current user
-    db.execute(
-        'DELETE FROM favorites WHERE id = ? AND user_id = ?',
-        (fav_id, get_current_user())
-    )
+    db.execute('DELETE FROM favorites WHERE (id = ? OR perfume_id = ?) AND user_id = ?', (fav_id, fav_id, get_current_user()))
+    db.commit()
+    db.close()
+    return redirect(request.referrer)
+
+@app.route('/favorites/update/<int:fav_id>', methods=['POST'])
+def update_favorite(fav_id):
+    db = get_db()
+    db.execute('UPDATE favorites SET personal_note = ? WHERE id = ?', (request.form.get('note'), fav_id))
     db.commit()
     db.close()
     return redirect(url_for('favorites'))
 
 if __name__ == '__main__':
-    # initialize database on first run
     init_db()
-    server = Server(app.wsgi_app)
-    server.watch('templates/*.*')
-    server.watch('static/*.*')
-    server.serve(port=5000)
+    app.run(debug=True, port=5000)
