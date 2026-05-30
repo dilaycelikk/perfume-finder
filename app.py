@@ -55,7 +55,6 @@ def dashboard():
     
     favorite_note = "Start saving to see insights"
     if top_note_row and top_note_row['notes']:
-        
         first_note = top_note_row['notes'].split(',')[0].strip()
         favorite_note = first_note.title()
         
@@ -95,7 +94,15 @@ def favorites():
                          FROM favorites f JOIN perfumes p ON f.perfume_id = p.id 
                          WHERE f.user_id = ?''', (get_current_user(),)).fetchall()
     db.close()
-    return render_template('favorites.html', favorites=[dict(f) for f in favs])
+   
+   
+    fav_list = []
+    for f in favs:
+        perfume_dict = dict(f)
+        perfume_dict['longevity_label'] = get_longevity_label(perfume_dict['longevity_hours'])
+        fav_list.append(perfume_dict)
+        
+    return render_template('favorites.html', favorites=fav_list)
 
 @app.route('/favorites/add/<int:perfume_id>', methods=['POST'])
 def add_favorite(perfume_id):
