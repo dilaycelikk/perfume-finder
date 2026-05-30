@@ -1,56 +1,74 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="form-container">
-    <h2>Find Your Perfect Scent</h2>
-    <p>Answer the questions below to get personalized perfume recommendations.</p>
-
-    <form method="POST">
-        <div class="form-group">
-            <label>Gender Preference</label>
-            <select name="gender" required>
-                <option value="">Select...</option>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-                <option value="unisex">Unisex</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Budget</label>
-            <select name="budget" required>
-                <option value="">Select...</option>
-                <option value="budget">Budget-Friendly</option>
-                <option value="mid">Mid-Range</option>
-                <option value="luxury">Luxury</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Season</label>
-            <select name="season" required>
-                <option value="">Select...</option>
-                <option value="spring">Spring</option>
-                <option value="summer">Summer</option>
-                <option value="fall">Fall</option>
-                <option value="winter">Winter</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Occasion</label>
-            <select name="mood" required>
-                <option value="">Select...</option>
-                <option value="daily">Daily</option>
-                <option value="work">Work</option>
-                <option value="evening">Evening</option>
-                <option value="special">Special Occasion</option>
-            </select>
-        </div>
-
+<div class="box">
+    <span class="eyebrow">Fragrance Quiz</span>
+    <h1 class="title">Your <em>Signature Scent</em>, Just a Click Away.</h1>
+    
+    <form method="POST" action="{{ url_for('quiz') }}">
         
+        <div class="row">
+            <div class="label">Gender</div>
+            <div class="options"> 
+                <label><input type="radio" name="gender" value="female" required> <span>Female</span></label>
+                <label><input type="radio" name="gender" value="male" required> <span>Male</span></label>
+                <label><input type="radio" name="gender" value="unisex" required> <span>Unisex</span></label>
+            </div>
+        </div>
 
-        <button type="submit" class="btn-primary">Find Perfumes →</button>
+        <div class="row">
+            <div class="label">Budget</div>
+            <div class="options"> 
+                <label><input type="radio" name="budget" value="budget" required> <span>Budget</span></label>
+                <label><input type="radio" name="budget" value="mid" required> <span>Mid</span></label>
+                <label><input type="radio" name="budget" value="luxury" required> <span>Luxury</span></label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Season</div>
+            <div class="options"> 
+                <label><input type="radio" name="season" value="spring" required> <span>Spring</span></label>
+                <label><input type="radio" name="season" value="summer" required> <span>Summer</span></label>
+                <label><input type="radio" name="season" value="fall" required> <span>Fall</span></label>
+                <label><input type="radio" name="season" value="winter" required> <span>Winter</span></label> 
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Occasion</div>
+            <div class="options"> 
+                <label><input type="radio" name="mood" value="daily" required> <span>Daily</span></label>
+                <label><input type="radio" name="mood" value="work" required> <span>Work</span></label>
+                <label><input type="radio" name="mood" value="evening" required> <span>Evening</span></label>
+                <label><input type="radio" name="mood" value="special" required> <span>Special</span></label> 
+            </div>
+        </div>
+
+        <button type="submit" class="btn-gold">VIEW RESULTS</button>
     </form>
 </div>
+
+<style>
+    /* Quiz Sayfasına Özel Grid Ayarı */
+    .options { 
+        display: grid !important; 
+        grid-template-columns: repeat(4, 1fr); 
+        gap: 15px; 
+    }
+    .options label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .options input[type="radio"] {
+        appearance: none; -webkit-appearance: none;
+        width: 13px; height: 13px;
+        border: 1px solid #444; border-radius: 50%;
+        background: transparent; cursor: pointer;
+        transition: all 0.3s ease; margin: 0; flex-shrink: 0;
+    }
+    .options input[type="radio"]:checked {
+        background: #C8A96B; border-color: #C8A96B;
+        box-shadow: 0 0 10px rgba(200, 169, 107, 0.4);
+    }
+    .options input[type="radio"]:checked + span { color: #F5F5F2; }
+    .options input[type="radio"]:hover { transform: scale(1.1); border-color: #777; }
+</style>
 {% endblock %}
