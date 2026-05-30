@@ -1,22 +1,49 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="dashboard">
-    <h2>Welcome, {{ username }}! 👋</h2>
-    <p>Find your perfect fragrance or check your saved ones.</p>
+<div class="box" style="max-width: 800px;">
+    
+    <span class="eyebrow" style="text-align: left;">YOUR SILLAGE</span>
+    <h1 class="title" style="text-align: left;">Welcome to your scent journey, <em style="text-transform: capitalize;">{{ username }}</em>.</h1>
+    
+    <div style="border-top: 1px solid rgba(200, 169, 107, 0.1); margin: 30px 0;"></div>
 
-    <div class="dashboard-cards">
-        <div class="card">
-            <h3>🔍 Find a Perfume</h3>
-            <p>Answer a few questions and discover the scent that suits you best.</p>
-            <a href="{{ url_for('quiz') }}" class="btn-primary">Start Quiz</a>
+    <div style="display: flex; gap: 30px; margin-bottom: 40px;">
+        
+        <div style="flex: 1; border: 1px solid #222; padding: 30px; background: #0f0f0f; display: flex; flex-direction: column; justify-content: center;">
+            <div style="color: #C8A96B; font-family: 'Cormorant Garamond', serif; font-size: 40px; margin-bottom: 10px;">{{ count|default('0') }}</div>
+            <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #777;">Saved Fragrances</div>
         </div>
+        
+        <div style="flex: 1; border: 1px solid #222; padding: 20px 30px; background: #0f0f0f; display: flex; flex-direction: column; justify-content: center;">
+            
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #777;">Daily Pick ✧</div>
+                <div style="color: #C8A96B; font-family: 'Cormorant Garamond', serif; font-size: 18px; margin-top: 4px;">
+                    {% if daily_pick %}
+                        {{ daily_pick.name }} <span style="font-size: 14px; color: #888;">by {{ daily_pick.brand }}</span>
+                    {% else %}
+                        Check back later
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid #222; margin-bottom: 12px;"></div>
+            
+            <div>
+                <div style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #777;">Signature Vibe</div>
+                <div style="color: #C8A96B; font-family: 'Cormorant Garamond', serif; font-size: 18px; margin-top: 4px;">
+                    {{ favorite_note }}
+                </div>
+            </div>
 
-        <div class="card">
-            <h3>❤️ My Favorites</h3>
-            <p>You have <strong>{{ count }}</strong> saved perfume(s).</p>
-            <a href="{{ url_for('favorites') }}" class="btn-secondary">View Favorites</a>
         </div>
     </div>
+
+    <div style="display: flex; gap: 20px;">
+        <a href="{{ url_for('quiz') }}" class="btn-gold" style="flex: 1;">Discover Scents</a>
+        <a href="{{ url_for('favorites') }}" class="btn-gold btn-outline" style="flex: 1;">View Collection</a>
+    </div>
+
 </div>
 {% endblock %}
